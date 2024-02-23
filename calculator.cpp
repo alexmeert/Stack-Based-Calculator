@@ -6,7 +6,8 @@
 
 using namespace std;
 
-class Stack {
+class Stack
+{
 private:
     static const int MAX_SIZE = 100;
     int str[MAX_SIZE];
@@ -84,22 +85,24 @@ public:
         string postfix;
         Stack stack;
         bool lastWasOperand = false;
+        bool operatorEncountered = false;
 
         for (char c : s)
-        {
+        {   
             if (isspace(c))
             {
-                continue; // skip white spaces
+                continue; // skips over spaces
             }
             if (isdigit(c))
             {
                 if(lastWasOperand)
                 {
-                    cout << "Error: invalid number of operands" << endl;
+                    cout << "Error: Invalid number of operands!" << endl;
                     return "";
                 }
                 postfix += c;
                 lastWasOperand = true;
+                operatorEncountered = false; // Reset operatorEncountered when operand is encountered
             }
             else if (c == '(')
             {
@@ -115,17 +118,18 @@ public:
                 }
                 if(stack.isEmpty())
                 {
-                    cout << "Error: Invalid parentheses" << endl;
+                    cout << "Error: Invalid parentheses!" << endl;
                     return "";
                 }
                 stack.pop(); // remove '('
                 lastWasOperand = false;
+                operatorEncountered = false; // Reset operatorEncountered when closing parenthesis is encountered
             }
             else if (c == '+' || c == '-' || c == '*' || c == '/' || c == '^')
             {
-                if(!lastWasOperand && (c == '+' || c == 'i'))
+                if(!lastWasOperand && !operatorEncountered)
                 {
-                    cout << "Error: invalid number of operands" << endl;
+                    cout << "Error: Invalid number of operators!" << endl;
                     return "";
                 }
                 while (!stack.isEmpty() && precedence(stack.peek()) >= precedence(c))
@@ -135,10 +139,11 @@ public:
                 }
                 stack.push(c);
                 lastWasOperand = false;
+                operatorEncountered = true; // Set operatorEncountered when operator is encountered
             }
             else
             {
-                cout << "Error: Invalid character '" << c << "' in the expression" << endl;
+                cout << "Error: Invalid character '" << c << "' in the expression!" << endl;
                 return "";
             }
         }
@@ -147,7 +152,7 @@ public:
         {
             if(stack.peek() == '(')
             {
-                cout << "Error: Invalid Parentheses" << endl;
+                cout << "Error: Invalid parentheses!" << endl;
                 return "";
             }
             postfix += stack.peek();
@@ -156,6 +161,7 @@ public:
 
         return postfix;
     }
+
 
     string print_postfix(string s)
     {
