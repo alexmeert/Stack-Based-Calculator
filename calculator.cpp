@@ -1,63 +1,87 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
-#include <cctype>
 #include <cmath>
 
 using namespace std;
 
-class Stack
-{
+class Stack {
 private:
     static const int MAX_SIZE = 100;
-    int str[MAX_SIZE];
+    char str[MAX_SIZE];
     int top = -1;
 
 public:
-    bool isEmpty() const
-    {
+    bool isEmpty() const {
         return top < 0;
     }
 
-    bool isFull() const
-    {
+    bool isFull() const {
         return top >= MAX_SIZE - 1;
     }
 
-    void push(int val)
-    {
-        if (!isFull())
-        {
+    void push(char val) {
+        if (!isFull()) {
             str[++top] = val;
         }
-        else
-        {
+        else {
             cout << "Stack Overflow!" << endl;
         }
     }
 
-    void pop() {
-        if (!isEmpty())
-        {
-            --top;
+    char pop() {
+        if (!isEmpty()) {
+            return str[top--];
         }
-        else
-        {
+        else {
             cout << "Stack Underflow!" << endl;
+            return '\0'; // Return null character b/c of empty stack
         }
     }
 
-    char peek() const
-    {
-        if (!isEmpty())
-        {
+    char peek() const {
+        if (!isEmpty()) {
             return str[top];
         }
-        else
-        {
+        else {
             cout << "Stack is empty!" << endl;
-            return -1;
+            return '\0'; // Return null character b/c of empty stack
         }
+    }
+
+    bool isMatchingPair(char character1, char character2) {
+        if (character1 == '(' && character2 == ')') {
+            return true;
+        }
+        else if (character1 == '{' && character2 == '}') {
+            return true;
+        }
+        else if (character1 == '[' && character2 == ']') {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    bool areParenthesisBalanced(const string& exp) 
+    {
+        for (char c : exp)
+        {
+            if (c == '{' || c == '(' || c == '[')
+            {
+                push(c);
+            }
+            else if (c == '}' || c == ')' || c == ']') 
+            {
+                if (isEmpty() || !isMatchingPair(pop(), c))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return isEmpty();
     }
 
     int precedence(char op)
@@ -66,7 +90,7 @@ public:
         {
             return 1;
         }
-        else if (op == '*' || op == '/')
+        else if (op == '*' || op == '/' || op == '%')
         {
             return 2;
         }
@@ -82,64 +106,63 @@ public:
 
     string to_postfix(const string& s)
     {
-        string postfix;
-        Stack stack;
-        bool lastWasOperand = false;
-        bool operatorEncountered = false;
+        // Check for balanced parentheses before starting conversion
+        if (!areParenthesisBalanced(s)) {
+            cout << "Error: Unbalanced parentheses!" << endl;
+            return "";
+        }
 
+        string postfix;
+        bool lastWasOperand = false;
+        
         for (char c : s)
-        {   
+        {
             if (isspace(c))
             {
-                continue; // skips over spaces
+                continue;
             }
             if (isdigit(c))
             {
-                if(lastWasOperand)
-                {
-                    cout << "Error: Invalid number of operands!" << endl;
-                    return "";
-                }
-                postfix += c;
-                lastWasOperand = true;
-                operatorEncountered = false; // Reset operatorEncountered when operand is encountered
-            }
-            else if (c == '(')
-            {
-                stack.push(c);
-                lastWasOperand = false;
-            }
-            else if (c == ')')
-            {
-                while (!stack.isEmpty() && stack.peek() != '(')
-                {
-                    postfix += stack.peek();
-                    stack.pop();
-                }
-                if(stack.isEmpty())
-                {
-                    cout << "Error: Invalid parentheses!" << endl;
-                    return "";
-                }
-                stack.pop(); // remove '('
-                lastWasOperand = false;
-                operatorEncountered = false; // Reset operatorEncountered when closing parenthesis is encountered
-            }
-            else if (c == '+' || c == '-' || c == '*' || c == '/' || c == '^')
-            {
-                if(!lastWasOperand && !operatorEncountered)
+                if (lastWasOperand)
                 {
                     cout << "Error: Invalid number of operators!" << endl;
                     return "";
                 }
-                while (!stack.isEmpty() && precedence(stack.peek()) >= precedence(c))
-                {
-                    postfix += stack.peek();
-                    stack.pop();
-                }
-                stack.push(c);
+                postfix += c;
+                lastWasOperand = true;
+            }
+            else if (c == '(' || c == '[' || c == '{')
+            {
+                push(c);
                 lastWasOperand = false;
-                operatorEncountered = true; // Set operatorEncountered when operator is encountered
+            }
+            else if (c == ')' || c == ']' || c == '}')
+            {
+                while (!isEmpty() && peek() != '(' && peek() != '[' && peek() != '{')
+                {
+                    postfix += pop();
+                }
+                if (isEmpty() || !isMatchingPair(peek(), c))
+                {
+                    cout << "Error: Invalid parentheses!" << endl;
+                    return "";
+                }
+                pop();
+                lastWasOperand = true;
+            }
+            else if (c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || c == '^')
+            {
+                if (!lastWasOperand)
+                {
+                    cout << "Error: Invalid number of operands!" << endl;
+                    return "";
+                }
+                while (!isEmpty() && precedence(peek()) >= precedence(c))
+                {
+                    postfix += pop();
+                }
+                push(c);
+                lastWasOperand = false;
             }
             else
             {
@@ -148,20 +171,13 @@ public:
             }
         }
 
-        while (!stack.isEmpty())
+        while (!isEmpty() && peek() != '(' && peek() != '[' && peek() != '{')
         {
-            if(stack.peek() == '(')
-            {
-                cout << "Error: Invalid parentheses!" << endl;
-                return "";
-            }
-            postfix += stack.peek();
-            stack.pop();
+            postfix += pop();
         }
 
         return postfix;
     }
-
 
     string print_postfix(string s)
     {
@@ -172,7 +188,7 @@ public:
         return s;
     }
 
-    double evaluatePostfix(string s)
+    float evaluatePostfix(string s)
     {
         Stack stack;
 
@@ -180,15 +196,13 @@ public:
         {
             if (isdigit(c))
             {
-                stack.push(c - '0');
+                stack.push(c - '0'); // Convert character to integer
             }
             else
             {
-                double operand2 = stack.peek();
-                stack.pop();
-                double operand1 = stack.peek();
-                stack.pop();
-                double result;
+                float operand2 = stack.pop();
+                float operand1 = stack.pop();
+                float result;
                 switch (c)
                 {
                     case '+':
@@ -201,7 +215,10 @@ public:
                         result = operand1 * operand2;
                         break;
                     case '/':
-                        result = operand1 / operand2;
+                        result = float(operand1) / operand2;
+                        break;
+                    case '%':
+                        result = fmod(operand1, operand2);
                         break;
                     case '^':
                         result = pow(operand1, operand2);
@@ -211,7 +228,7 @@ public:
             }
         }
 
-        return stack.peek();
+        return stack.pop();
     }
 
 };
@@ -230,20 +247,23 @@ int main()
         cout << "+----------------------------+\n";
         cout << "Enter your choice: ";
         cin >> choice;
-        cin.ignore(); // consume the newline character left in the input buffer
+        cin.ignore();
 
-        switch (choice)
-        {
-        case 1:
-        {
+        switch (choice) {
+        case 1: {
             cout << "Enter an Infix Expression: ";
             getline(cin, infixExpression);
-            string postfixExp = stack.to_postfix(infixExpression);
-            if (!postfixExp.empty())
+            if (stack.areParenthesisBalanced(infixExpression)) {
+                string postfixExp = stack.to_postfix(infixExpression);
+                if (!postfixExp.empty()) {
+                    stack.print_postfix(postfixExp);
+                    float result = stack.evaluatePostfix(postfixExp);
+                    cout << "Result: " << fixed << setprecision(3) << result << endl;
+                }
+            }
+            else
             {
-                stack.print_postfix(postfixExp);
-                double result = stack.evaluatePostfix(postfixExp);
-                cout << "Result: " << fixed << setprecision(3) << result << endl;
+                cout << "Error: Unbalanced parentheses!" << endl;
             }
             break;
         }
